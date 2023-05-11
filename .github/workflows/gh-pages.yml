@@ -78,7 +78,7 @@ jobs:
       run: echo "PUBLIC_URL=stlite"
     - if: matrix.target == 'mountable'
       name: Build @stlite/mountable
-      run: make mountable
+      run: PUBLIC_URL=stlite make mountable
 
     - if: matrix.target == 'mountable'
       name: Upload the built files as an artifact
