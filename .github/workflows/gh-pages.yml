@@ -108,6 +108,7 @@ jobs:
       run: |
         mkdir -p /tmp/website/
         cp -r ./mountable/* /tmp/website/.
+        mv /tmp/website/asset-manifest.json /tmp/website/manifest.json
 
     - name: Upload the website files as an artifact
       uses: actions/upload-artifact@v3
