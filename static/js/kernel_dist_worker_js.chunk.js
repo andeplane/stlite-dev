@@ -609,13 +609,6 @@ ctx.postMessage({
   type: "event:start"
 });
 const patchCognite = () => __awaiter(void 0, void 0, void 0, function* () {
-  // const micropip = await pyodide.loadPackage("micropip") 
-  const requirements = ["pyodide-http", "requests", "cognite-sdk", "pandas", "matplotlib"];
-  yield pyodide.loadPackage("micropip");
-  const micropip = pyodide.pyimport("micropip");
-  yield micropip.install.callKwargs(requirements, {
-    keep_going: true
-  });
   // If token has been passed already, set token etc
   yield pyodide.runPythonAsync(`
     import os
