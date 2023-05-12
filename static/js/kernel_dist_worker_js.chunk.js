@@ -780,7 +780,7 @@ if (typeof Promise !== 'undefined' && $ReactRefreshCurrentExports$ instanceof Pr
 /******/ 	
 /******/ 	/* webpack/runtime/publicPath */
 /******/ 	(() => {
-/******/ 		__webpack_require__.p = "/stlite/";
+/******/ 		__webpack_require__.p = "/stlite-dev/";
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/react refresh */
