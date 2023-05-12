@@ -74,40 +74,6 @@ export function mount(
   };
 }
 
-// if (process.env.NODE_ENV === "development") {
-// const stuff = mount(
-//     {
-//       entrypoint: "streamlit_app.py",
-//       files: {
-//         "streamlit_app.py": `
-// import streamlit as st
-// from cognite.client import CogniteClient
-// client = CogniteClient()
-// assets = client.assets.list()
-// df = assets.to_pandas()
-// df = df.fillna(0)
-// st.dataframe(df)
-//     `,
-//       },
-//       requirements: ["matplotlib"],
-//     },
-//     document.getElementById("root") as HTMLElement
-//   );
-
-//   window.addEventListener(
-//     "message",
-//     (event) => {
-//       if (
-//         typeof event.data === "object" &&
-//         "code" in event.data
-//       ) {
-//         stuff.writeFile("streamlit_app.py", event.data.code)
-//       }
-//     },
-//     false
-//   );
-// }
-
 export interface AppData {
   entrypoint?: string;
   files: {
@@ -193,7 +159,7 @@ let mountedApp: any = null;
           }
         }
 
-        prevApp = event.data
+        prevApp = event.data.app
       }
       }
     },
