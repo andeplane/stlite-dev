@@ -131,7 +131,7 @@ let mountedApp: any = null;
 
   window.addEventListener(
     "message",
-    (event) => {
+    async (event) => {
       if (
         typeof event.data === "object" &&
         "code" in event.data
@@ -139,7 +139,7 @@ let mountedApp: any = null;
         if (!mountedApp) {
           mountedApp = mount(
             {
-              entrypoint: "main.py",
+              entrypoint: "streamlit_app.py",
               files: {},
               requirements: ["matplotlib"],
             },
@@ -147,13 +147,13 @@ let mountedApp: any = null;
           );
         }
 
-        mountedApp.writeFile("main.py", event.data.code)
+        mountedApp.writeFile("streamlit_app.py", event.data.code)
       } else if (
         typeof event.data === "object" &&
         "app" in event.data
       ) {
+      const app = event.data.app
       if (!mountedApp) {
-        const app = event.data.app
         const restructuredFiles: {[key: string]: string} = {}
 
         // File format is not exactly identical
@@ -179,22 +179,16 @@ let mountedApp: any = null;
       } else {
         if (prevApp) {
           // Remove any deleted files
-          for (const prevFileName in prevApp.files) {
-            if (!(prevFileName in event.data.files)) {
+          Object.keys(prevApp.files).forEach((prevFileName) => {
+            if (!(prevFileName in app.files)) {
               mountedApp.unlink(prevFileName)
             }
-          }
+          })
+          
           // Write any new or changed files
-          for (const fileName in event.data.files) {
-            if (!(fileName in prevApp.files) || event.data.files[fileName].content !== prevApp.files[fileName].content) {
-              mountedApp.writeFile(fileName, event.data.files[fileName].content.text)
-            }
-          }
-          // Install new requirements if needed
-          for (const requirement of event.data.requirements) {
-            if (!prevApp.requirements.includes(requirement)) {
-              mountedApp.install(event.data.requirements)
-              break
+          for (const fileName in app.files) {
+            if (!(fileName in prevApp.files) || app.files[fileName].content !== prevApp.files[fileName].content) {
+              mountedApp.writeFile(fileName, app.files[fileName].content.text)
             }
           }
         }
