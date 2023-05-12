@@ -74,25 +74,60 @@ export function mount(
   };
 }
 
-if (process.env.NODE_ENV === "development") {
-const stuff = mount(
-    {
-      entrypoint: "streamlit_app.py",
-      files: {
-        "streamlit_app.py": `
-import streamlit as st
-from cognite.client import CogniteClient
-client = CogniteClient()
-assets = client.assets.list()
-df = assets.to_pandas()
-df = df.fillna(0)
-st.dataframe(df)
-    `,
-      },
-      requirements: ["matplotlib"],
-    },
-    document.getElementById("root") as HTMLElement
-  );
+// if (process.env.NODE_ENV === "development") {
+// const stuff = mount(
+//     {
+//       entrypoint: "streamlit_app.py",
+//       files: {
+//         "streamlit_app.py": `
+// import streamlit as st
+// from cognite.client import CogniteClient
+// client = CogniteClient()
+// assets = client.assets.list()
+// df = assets.to_pandas()
+// df = df.fillna(0)
+// st.dataframe(df)
+//     `,
+//       },
+//       requirements: ["matplotlib"],
+//     },
+//     document.getElementById("root") as HTMLElement
+//   );
+
+//   window.addEventListener(
+//     "message",
+//     (event) => {
+//       if (
+//         typeof event.data === "object" &&
+//         "code" in event.data
+//       ) {
+//         stuff.writeFile("streamlit_app.py", event.data.code)
+//       }
+//     },
+//     false
+//   );
+// }
+
+export interface AppData {
+  entrypoint?: string;
+  files: {
+    [key: string]: {
+      content?:
+        | {
+            $case: 'text';
+            text: string;
+          }
+        | {
+            $case: 'data';
+            data: Uint8Array;
+          };
+    };
+  };
+  requirements: string[];
+}
+
+let prevApp: AppData | null = null
+let mountedApp: any = null;
 
   window.addEventListener(
     "message",
@@ -101,10 +136,79 @@ st.dataframe(df)
         typeof event.data === "object" &&
         "code" in event.data
       ) {
-        stuff.writeFile("streamlit_app.py", event.data.code)
+        if (!mountedApp) {
+          mountedApp = mount(
+            {
+              entrypoint: "main.py",
+              files: {},
+              requirements: ["matplotlib"],
+            },
+            document.getElementById("root") as HTMLElement
+          );
+        }
+
+        mountedApp.writeFile("main.py", event.data.code)
+      } else if (
+        typeof event.data === "object" &&
+        "app" in event.data
+      ) {
+      if (!mountedApp) {
+        const app = event.data.app
+        const restructuredFiles: {[key: string]: string} = {}
+
+        // File format is not exactly identical
+        for (const fileName in app.files) {
+          restructuredFiles[fileName] = app.files[fileName].content.text
+        }
+        
+        app.files = restructuredFiles
+        
+        // Might not have an entrypoint
+        if (!app.entrypoint) {
+          // Just guess that the first .py file is the entrypoint
+          // TODO: fix this to be more robust
+          for (const fileName in app.files) {
+            if (fileName.endsWith(".py")) {
+              app.entrypoint = fileName
+              break
+            }
+          }
+        }
+        mountedApp = mount(app,document.getElementById("root") as HTMLElement)
+        prevApp = app
+      } else {
+        if (prevApp) {
+          // Remove any deleted files
+          for (const prevFileName in prevApp.files) {
+            if (!(prevFileName in event.data.files)) {
+              mountedApp.unlink(prevFileName)
+            }
+          }
+          // Write any new or changed files
+          for (const fileName in event.data.files) {
+            if (!(fileName in prevApp.files) || event.data.files[fileName].content !== prevApp.files[fileName].content) {
+              mountedApp.writeFile(fileName, event.data.files[fileName].content.text)
+            }
+          }
+          // Install new requirements if needed
+          for (const requirement of event.data.requirements) {
+            if (!prevApp.requirements.includes(requirement)) {
+              mountedApp.install(event.data.requirements)
+              break
+            }
+          }
+        }
+
+        prevApp = event.data
+      }
       }
     },
     false
   );
   
-}
+  // communicate if in iframe to parent (top)
+  if (window.top) {
+    window.top.postMessage({
+      'streamlitstatus': 'ready'
+    }, '*');
+  }
